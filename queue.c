@@ -23,17 +23,28 @@
 */
 queue_t *q_new()
 {
-    queue_t *q =  malloc(sizeof(queue_t));
-    /* What if malloc returned NULL? */
+    queue_t *q = malloc(sizeof(queue_t));
+    if (q == NULL)
+        return NULL;
+    
     q->head = NULL;
+    q->tail = NULL;
     return q;
 }
 
 /* Free all storage used by queue */
 void q_free(queue_t *q)
 {
-    /* How about freeing the list elements and the strings? */
-    /* Free queue structure */
+    if (q == NULL)
+        return;
+    
+    list_ele_t *current = q->head;
+    while (current != NULL) {
+        list_ele_t *temp = current;
+        current = current->next;
+        free(temp->value); // string
+        free(temp); // list element
+    }
     free(q);
 }
 
@@ -46,14 +57,28 @@ void q_free(queue_t *q)
  */
 bool q_insert_head(queue_t *q, char *s)
 {
-    list_ele_t *newh;
-    /* What should you do if the q is NULL? */
-    newh = malloc(sizeof(list_ele_t));
-    /* Don't forget to allocate space for the string and copy it */
-    /* What if either call to malloc returns NULL? */
-    /* You must do the cleanup of anything left behind */
-    newh->next = q->head;
-    q->head = newh;
+    if (q == NULL || s == NULL)
+        return false;
+    
+    list_ele_t *new = malloc(sizeof(list_ele_t));
+    if (new == NULL)
+        return false;
+    
+    new->value = malloc(strlen(s) + 1);  // null terminator
+    if (new->value == NULL) {
+        free(new); // if fails, clean new
+        return false;
+    }
+    strcpy(new->value, s);
+    
+    // link new node
+    new->next = q->head;
+    q->head = new;
+    
+    // if first element, set as tail
+    if (new->next == NULL)
+        q->tail = new;
+        
     return true;
 }
 
@@ -67,9 +92,32 @@ bool q_insert_head(queue_t *q, char *s)
  */
 bool q_insert_tail(queue_t *q, char *s)
 {
-    /* You need to write the complete code for this function */
-    /* Remember: It should operate in O(1) time */
-    return false;
+    if (q == NULL || s == NULL)
+        return false;
+    
+    list_ele_t *new = malloc(sizeof(list_ele_t));
+    if (new == NULL)
+        return false;
+    
+    new->value = malloc(strlen(s) + 1);  // null terminator
+    if (new->value == NULL) {
+        free(new); // if fails, clean new
+        return false;
+    }
+    strcpy(new->value, s);
+    
+    new->next = NULL;
+    
+    // if empty, set head and tail to new
+    if (q->head == NULL) {
+        q->head = new;
+        q->tail = new;
+    } else {
+        q->tail->next = new;
+        q->tail = new;
+    }
+    
+    return true;
 }
 
 /*
@@ -82,8 +130,24 @@ bool q_insert_tail(queue_t *q, char *s)
 */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    /* You need to fix up this code. */
+    if (q == NULL || q->head == NULL)
+        return false;
+    
+    list_ele_t *temp = q->head;
     q->head = q->head->next;
+    
+    // if empty, update tail
+    if (q->head == NULL)
+        q->tail = NULL;
+    
+    // if sp not null, copy string to buffer
+    if (sp != NULL) {
+        strncpy(sp, temp->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';  // null termination check
+    }
+    
+    free(temp->value);
+    free(temp);
     return true;
 }
 
